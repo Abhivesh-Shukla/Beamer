@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DriverAssignedEvent",
+  "type": "object",
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["driver-assigned"],
+      "description": "Event type identifier"
+    },
+    "orderId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for the order"
+    },
+    "driverId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier of the assigned delivery driver"
+    },
+    "distanceKm": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Calculated distance between driver and restaurant/delivery location in kilometers"
+    },
+    "etaMinutes": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Predicted total ETA in minutes"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when driver was assigned"
+    }
+  },
+  "required": [
+    "eventId",
+    "eventType",
+    "orderId",
+    "driverId",
+    "distanceKm",
+    "etaMinutes",
+    "timestamp"
+  ],
+  "additionalProperties": false
+}

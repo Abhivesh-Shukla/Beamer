@@ -1,0 +1,122 @@
+openapi: 3.0.3
+info:
+  title: Ops Dashboard API
+  description: Internal monitoring dashboard service polling health & metric snapshots across all platform services.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint for Ops Dashboard
+      operationId: getDashboardHealth
+      responses:
+        '200':
+          description: Dashboard service health
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+
+  /dashboard:
+    get:
+      summary: HTML operational dashboard page
+      operationId: getDashboardPage
+      responses:
+        '200':
+          description: HTML page rendering service health & Chart.js metric trends
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /api/metrics/snapshots:
+    get:
+      summary: Query historical service metric snapshots from ops_db
+      operationId: getMetricSnapshots
+      parameters:
+        - name: serviceName
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: List of stored metric snapshots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MetricSnapshotResponse'
+
+  /api/funnel:
+    get:
+      summary: Query system-wide order completion funnel stats
+      operationId: getOrderFunnel
+      responses:
+        '200':
+          description: Counts per order lifecycle stage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderFunnelResponse'
+
+components:
+  schemas:
+    MetricSnapshotResponse:
+      type: object
+      required:
+        - id
+        - serviceName
+        - status
+        - requestCount
+        - errorCount
+        - avgLatencyMs
+        - capturedAt
+      properties:
+        id:
+          type: integer
+        serviceName:
+          type: string
+        status:
+          type: string
+          enum: [HEALTHY, UNHEALTHY, UNREACHABLE]
+        requestCount:
+          type: integer
+        errorCount:
+          type: integer
+        avgLatencyMs:
+          type: number
+        capturedAt:
+          type: string
+          format: date-time
+
+    OrderFunnelResponse:
+      type: object
+      required:
+        - created
+        - accepted
+        - assigned
+        - delivered
+      properties:
+        created:
+          type: integer
+        accepted:
+          type: integer
+        assigned:
+          type: integer
+        delivered:
+          type: integer

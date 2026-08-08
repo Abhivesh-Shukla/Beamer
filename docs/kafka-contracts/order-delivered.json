@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "OrderDeliveredEvent",
+  "type": "object",
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["order-delivered"],
+      "description": "Event type identifier"
+    },
+    "orderId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for the delivered order"
+    },
+    "driverId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier of the delivery driver"
+    },
+    "deliveredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when order was delivered"
+    }
+  },
+  "required": [
+    "eventId",
+    "eventType",
+    "orderId",
+    "driverId",
+    "deliveredAt"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,119 @@
+openapi: 3.0.3
+info:
+  title: Assignment Service API
+  description: Spatial driver location updates and driver-matching assignment service.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8001
+    description: Local development server
+
+paths:
+  /drivers/{id}/location:
+    patch:
+      summary: Update real-time geo-location and status for a delivery driver
+      operationId: updateDriverLocation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDriverLocationRequest'
+      responses:
+        '200':
+          description: Location updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverLocationResponse'
+
+  /health:
+    get:
+      summary: Health check endpoint
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+
+  /metrics-lite:
+    get:
+      summary: Lightweight operational metrics
+      operationId: getMetricsLite
+      responses:
+        '200':
+          description: Service performance metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsLiteResponse'
+
+components:
+  schemas:
+    UpdateDriverLocationRequest:
+      type: object
+      required:
+        - lat
+        - lng
+      properties:
+        lat:
+          type: number
+          minimum: -90
+          maximum: 90
+        lng:
+          type: number
+          minimum: -180
+          maximum: 180
+        status:
+          type: string
+          enum: [AVAILABLE, BUSY, OFFLINE]
+          default: AVAILABLE
+
+    DriverLocationResponse:
+      type: object
+      required:
+        - driverId
+        - lat
+        - lng
+        - status
+        - updatedAt
+      properties:
+        driverId:
+          type: string
+          format: uuid
+        lat:
+          type: number
+        lng:
+          type: number
+        status:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    MetricsLiteResponse:
+      type: object
+      required:
+        - requestCount
+        - errorCount
+        - avgLatencyMs
+      properties:
+        requestCount:
+          type: integer
+        errorCount:
+          type: integer
+        avgLatencyMs:
+          type: number

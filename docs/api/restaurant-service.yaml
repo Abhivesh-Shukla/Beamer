@@ -1,0 +1,206 @@
+openapi: 3.0.3
+info:
+  title: Restaurant Service API
+  description: REST API for managing restaurants, menus, and menu items.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8082
+    description: Local development server
+
+paths:
+  /restaurants:
+    post:
+      summary: Register a new restaurant
+      operationId: createRestaurant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRestaurantRequest'
+      responses:
+        '201':
+          description: Restaurant successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantResponse'
+
+  /restaurants/{id}:
+    get:
+      summary: Retrieve restaurant profile by ID
+      operationId: getRestaurantById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Restaurant profile details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantResponse'
+        '404':
+          description: Restaurant not found
+
+  /restaurants/{id}/menu:
+    get:
+      summary: Get menu items for a restaurant
+      operationId: getRestaurantMenu
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Restaurant menu items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MenuItemResponse'
+
+    post:
+      summary: Add a new item to restaurant menu
+      operationId: addMenuItem
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMenuItemRequest'
+      responses:
+        '201':
+          description: Menu item added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuItemResponse'
+
+  /menu-items/{id}:
+    put:
+      summary: Update a menu item
+      operationId: updateMenuItem
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMenuItemRequest'
+      responses:
+        '200':
+          description: Menu item updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuItemResponse'
+
+    delete:
+      summary: Remove a menu item
+      operationId: deleteMenuItem
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Menu item deleted
+
+components:
+  schemas:
+    CreateRestaurantRequest:
+      type: object
+      required:
+        - name: address
+        - defaultPrepTimeMinutes
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        defaultPrepTimeMinutes:
+          type: integer
+          minimum: 1
+
+    RestaurantResponse:
+      type: object
+      required:
+        - id
+        - name
+        - address
+        - defaultPrepTimeMinutes
+        - active
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        address:
+          type: string
+        defaultPrepTimeMinutes:
+          type: integer
+        active:
+          type: boolean
+
+    CreateMenuItemRequest:
+      type: object
+      required:
+        - name
+        - price
+        - available
+      properties:
+        name:
+          type: string
+        price:
+          type: number
+          minimum: 0
+        available:
+          type: boolean
+
+    MenuItemResponse:
+      type: object
+      required:
+        - id
+        - restaurantId
+        - name
+        - price
+        - available
+      properties:
+        id:
+          type: string
+          format: uuid
+        restaurantId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        price:
+          type: number
+        available:
+          type: boolean

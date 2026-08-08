@@ -1,0 +1,111 @@
+openapi: 3.0.3
+info:
+  title: ETA Service API
+  description: Fast, deterministic delivery time prediction engine.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+paths:
+  /predict-eta:
+    post:
+      summary: Calculate estimated delivery time in minutes
+      operationId: predictEta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PredictEtaRequest'
+      responses:
+        '200':
+          description: Predicted ETA calculation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictEtaResponse'
+        '400':
+          description: Invalid input metrics
+
+  /health:
+    get:
+      summary: Service health check
+      operationId: getHealth
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+
+  /metrics-lite:
+    get:
+      summary: In-memory lightweight operational metrics
+      operationId: getMetricsLite
+      responses:
+        '200':
+          description: Lightweight operational metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsLiteResponse'
+
+components:
+  schemas:
+    PredictEtaRequest:
+      type: object
+      required:
+        - orderId
+        - distanceKm
+        - prepTimeMinutes
+        - driverAvailability
+        - trafficFactor
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        distanceKm:
+          type: number
+          minimum: 0
+        prepTimeMinutes:
+          type: integer
+          minimum: 1
+        driverAvailability:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Normalized driver availability ratio (0.0 to 1.0)
+        trafficFactor:
+          type: number
+          minimum: 0.5
+          maximum: 3.0
+          description: Traffic multiplier index (1.0 = normal)
+
+    PredictEtaResponse:
+      type: object
+      required:
+        - estimatedDeliveryMinutes
+      properties:
+        estimatedDeliveryMinutes:
+          type: integer
+          minimum: 1
+
+    MetricsLiteResponse:
+      type: object
+      required:
+        - requestCount
+        - errorCount
+        - avgLatencyMs
+      properties:
+        requestCount:
+          type: integer
+        errorCount:
+          type: integer
+        avgLatencyMs:
+          type: number

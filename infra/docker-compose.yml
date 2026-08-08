@@ -1,0 +1,170 @@
+networks:
+  delivery-net:
+    name: delivery-net
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
+  kafka-data:
+    driver: local
+
+services:
+  # MySQL 8 Relational Database Server (database-per-service + spatial index)
+  mysql:
+    image: mysql:8.0
+    container_name: food-delivery-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - ./mysql/init:/docker-entrypoint-initdb.d
+      - mysql-data:/var/lib/mysql
+    networks:
+      - delivery-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # Apache Kafka Event Broker (KRaft Mode - Self-Managed Raft Quorum, No ZooKeeper)
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: food-delivery-kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_KEYTREE_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+      CLUSTER_ID: '4L62D3TBRStatus4326AAAAA'
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - delivery-net
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ---------------------------------------------------------------------------
+  # Application Microservices (Placeholders to be un-commented during build phases)
+  # ---------------------------------------------------------------------------
+
+  # order-service:
+  #   build: ../services/order-service
+  #   container_name: order-service
+  #   ports:
+  #     - "8081:8081"
+  #   environment:
+  #     SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/order_db
+  #     SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #     kafka:
+  #       condition: service_healthy
+  #   networks:
+  #     - delivery-net
+
+  # restaurant-service:
+  #   build: ../services/restaurant-service
+  #   container_name: restaurant-service
+  #   ports:
+  #     - "8082:8082"
+  #   environment:
+  #     SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/restaurant_db
+  #     SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #     kafka:
+  #       condition: service_healthy
+  #   networks:
+  #     - delivery-net
+
+  # delivery-service:
+  #   build: ../services/delivery-service
+  #   container_name: delivery-service
+  #   ports:
+  #     - "8083:8083"
+  #   environment:
+  #     SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/delivery_db
+  #     SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #     kafka:
+  #       condition: service_healthy
+  #   networks:
+  #     - delivery-net
+
+  # eta-service:
+  #   build: ../services/eta-service
+  #   container_name: eta-service
+  #   ports:
+  #     - "8000:8000"
+  #   networks:
+  #     - delivery-net
+
+  # assignment-service:
+  #   build: ../services/assignment-service
+  #   container_name: assignment-service
+  #   ports:
+  #     - "8001:8001"
+  #   environment:
+  #     DATABASE_URL: mysql+pymysql://root:rootpassword@mysql:3306/assignment_db
+  #     KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+  #     ETA_SERVICE_URL: http://eta-service:8000
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #     kafka:
+  #       condition: service_healthy
+  #   networks:
+  #     - delivery-net
+
+  # notification-service:
+  #   build: ../services/notification-service
+  #   container_name: notification-service
+  #   ports:
+  #     - "8084:8084"
+  #   environment:
+  #     KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+  #   depends_on:
+  #     kafka:
+  #       condition: service_healthy
+  #   networks:
+  #     - delivery-net
+
+  # ops-dashboard:
+  #   build: ../services/ops-dashboard
+  #   container_name: ops-dashboard
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     MYSQL_HOST: mysql
+  #     MYSQL_DATABASE: ops_db
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #   networks:
+  #     - delivery-net
